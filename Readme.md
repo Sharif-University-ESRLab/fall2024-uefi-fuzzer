@@ -1,66 +1,103 @@
-
 ![Logo](https://via.placeholder.com/600x150?text=Your+Logo+Here+600x150)
-
 
 # UEFI Fuzzer
 
-In this project we aim to fuzz the UEFI bootloader similar to the work done in "UEFI Firmware Fuzzing with Simics Virtual Platform". The main difference is that we have chosen QEMU over Simics.
-
+In this project we aim to fuzz the UEFI bootloader similar to the work done in "UEFI Firmware Fuzzing with Simics Virtual Platform". The main difference is that we have chosen QEMU over Simics. Also the deperecated AFL fuzzer is replaced with LibAFL, a library for writing fuzzers in the Rust. An advantage of LibAFL over AFL++—AFL's successor—is its first-class support for QEMU system mode emulation through the `libafl_qemu` library.
 
 ## Tools
-In this section, you should mention the hardware or simulators utilized in your project.
-- Qemu
-- Gem5
-- ESP32
-- Raspberry Pi 3B
-- Temperature Sensor
+
+- QEMU
+- EDK II
+- LibAFL
 
 
 ## Implementation Details
 
-In this section, you will explain how you completed your project. It is recommended to use pictures to demonstrate your system model and implementation.
+### Building the Firmware and Writing an UEFI Application Using EDK II
+First we build an EDK2 image from [this documentation](https://wiki.osdev.org/EDK2) on Linux Debian 9, which gives us the Firmware.
+
+The OVMF firmware has to be emulated, to run an application(.efi) on it we had to mount the application on the hard disk of the guest in QEMU. 
+
+```Bash
+mkdir ovmf-run
+cd ovmf-run
+cp ../edk2/Build/OvmfX64/DEBUG
+GCC5/FV/OVMF.fd bios.bin
+_
+mkdir hda-contents
+qemu-system-x86
+_
+64 -drive if=pflash,file=bios.bin,format=raw -drive
+if=none,id=hd0,file=fat:rw:hda-contents/,format=raw -device
+virtio-blk-pci,drive=hd0 -net none
+```
+
+Also for the application to run we had to define a USB device for QEMU, which is done by the following code:
+
+```Bash
+qemu-system-x86
+_
+64 -drive if=pflash,file=bios.bin,format=raw -drive
+if=none,id=hd0,file=fat:rw:hda-contents/,format=raw -device
+virtio-blk-pci,drive=hd0 -device qemu-xhci,id=xhci -drive
+if=none,id=stick,format=raw,file=/dev/random -device
+usb-storage,bus=xhci.0,drive=stick -net none
+```
+
+for testing the correctness of it we wrote two programs one printing in a loop and one reading in a loop.
+
+### Emulation Using QEMU
 
 
-Feel free to use sub-topics for your projects. If your project consists of multiple parts (e.g. server, client, and embedded device), create a separate topic for each one.
+
+### Fuzzing with LibAFL
+
+> [!IMPORTANT]  
+> This part of the implementation is unfortunately incomplete. We describe our reasoning and the complications which led to our current state.
+
+The reasoning behind choosing LibAFL over AFL++ was its first-class support for QEMU system mode emulation. Unlike AFL++ which only supports QEMU user mode emulation for guiding the fuzzer during fuzzing black-box user-level applications through recognizing its memory access patterns, LibAFL's `libafl_qemu` library provides a way to interact with QEMU system mode emulator from a Rust program. The library is used to start QEMU system emulator with a given firmware image and to communicate with the emulated system. The communication is done through a shared memory region, which is used to pass the input to the emulated system and to receive the output from it. In our case, the input is the USB peripheral input and the output is the result of running the application used to guide the fuzzer and also detect unexpected behaviour implying bugs in implementation.
+
+While LibAFL’s documentation and examples—particularly seen in the `fuzzers/full_system` directory—focus on more typical fuzzing scenarios which utilized system mode emulation, our case involved some challenges that were harder to overcome. Specifically, we were trying to fuzz the firmware by emulating our custom UEFI application that uses the target UEFI API which in turn uses our target implementation, which introduced layers of complexity that the usual examples didn’t have to deal with—they usually were either targetting baremetal code directly running on the emulator or the application/kernel above the UEFI firmware. In other words the main issue was that our use case was different from the typical ones, where fuzzing usually targets either a simple baremetal application or directly the code running on top of the firmware. None of the examples which we found on the Internet or the articles which have released their fuzzer implementation have targeted the UEFI firmware in a similar way as us. This made it hard to find a starting point for our implementation, and we had to figure out how to adapt the existing examples to our specific use case—which was more time-consuming than initially estimated.
 
 ## How to Run
 
-In this part, you should provide instructions on how to run your project. Also if your project requires any prerequisites, mention them. 
+### Building the Firmware and Writing an UEFI Application Using EDK II
 
-#### Examples:
-#### Build Project
-Your text comes here
-```bash
-  build --platform=OvmfPkg/OvmfPkgX64.dsc --arch=X64 --buildtarget=RELEASE --tagname=GCC5
+
+
+### Emulation Using Qilinq
+Qilinq enables emulation within a python venv, for that we install and run qilinq using [this](https://docs.qiling.io/en/latest/install/) and then test a simple python code that tries to emulate the x8664_linux, where the rootfs contains the required files for emulation downloaded either from the qilinq repo or the target environment repo.
+
+```Python
+ql = Qiling([binary_path], rootfs_path)
 ```
 
-#### Run server
-Your text comes here
-```bash
-  pyhton server.py -p 8080
-```
+emulation from M1 Mac is not possible since the emulator looks for a /dyld file which is  not located in the rootfs file downloaded from the source!
 
-| Parameter | Type     | Description                |
-| :-------- | :------- | :------------------------- |
-| `-p` | `int` | **Required**. Server port |
+### Emulation Using QEMU
 
 
 
 ## Results
-In this section, you should present your results and provide an explanation for them.
 
-Using image is required.
+### Building the Firmware and Writing an UEFI Application Using EDK II
+
+
+
+### Emulation Using QEMU
+
+
 
 ## Related Links
-Some links related to your project come here.
- - [EDK II](https://github.com/tianocore/edk2)
- - [ESP32 Pinout](https://randomnerdtutorials.com/esp32-pinout-reference-gpios/)
- - [Django Doc](https://docs.djangoproject.com/en/5.0/)
 
+Some links related to your project come here.
+- [EDK II](https://github.com/tianocore/edk2)
+- [QEMU](https://www.qemu.org/)
+- [LibAFL](https://github.com/AFLplusplus/LibAFL)
 
 ## Authors
+
 Authors and their github link come here.
 - [@Soroush Sherafat](https://github.com/sorousherafat/)
 - [@Kasra Malihi](https://github.com/kasramalih)
 - [@Kian Bahadori](https://github.com/kian-bhd)
-
