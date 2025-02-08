@@ -81,12 +81,11 @@ emulation from M1 Mac is not possible since the emulator looks for a /dyld file 
 ## Results
 
 ### Building the Firmware and Writing an UEFI Application Using EDK II
+![building ovmf](https://github.com/Sharif-University-ESRLab/fall2024-uefi-fuzzer/blob/main/Screenshot%201403-11-20%20at%2013.43.57.png)
 ![alt text](https://github.com/Sharif-University-ESRLab/fall2024-uefi-fuzzer/blob/main/Screenshot%201403-11-20%20at%2013.33.54.png)
-![alt text](https://github.com/Sharif-University-ESRLab/fall2024-uefi-fuzzer/blob/main/Screenshot%201403-11-20%20at%2013.34.34.png)
 
 ### Emulation Using QEMU
-![alt text](https://github.com/Sharif-University-ESRLab/fall2024-uefi-fuzzer/blob/main/Screenshot%201403-11-20%20at%2013.43.57.png)
-
+![alt text](https://github.com/Sharif-University-ESRLab/fall2024-uefi-fuzzer/blob/main/Screenshot%201403-11-20%20at%2013.34.34.png)
 
 ## Related Links
 
