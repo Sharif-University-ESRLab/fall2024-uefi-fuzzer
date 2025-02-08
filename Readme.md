@@ -2,9 +2,9 @@
 ![Logo](https://via.placeholder.com/600x150?text=Your+Logo+Here+600x150)
 
 
-# Project Title
+# UEFI Fuzzer
 
-A brief description of what this project does and who it's for comes here.
+In this project we aim to fuzz the UEFI bootloader similar to the work done in "UEFI Firmware Fuzzing with Simics Virtual Platform". The main difference is that we have chosen QEMU over Simics.
 
 
 ## Tools
